@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ChatApp.Domain.Entities
+﻿namespace ChatApp.Domain.Entities
 {
-    internal class ChatUser
+    public class ChatUser
     {
+        // Composite key: ChatId plus UserId uniquely identify the relation
+        public int ChatId { get; set; }
+        public Chat Chat { get; set; }
+
+        public int UserId { get; set; }
+        public User User { get; set; }
     }
 }

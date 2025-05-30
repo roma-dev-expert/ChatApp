@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ChatApp.Domain.Entities
+﻿namespace ChatApp.Domain.Entities
 {
-    internal class User
+    public class User
     {
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public string PasswordHash { get; set; } // Password hash
+
+        // Navigation property: User participates in multiple chats
+        public ICollection<ChatUser> ChatUsers { get; set; } = new List<ChatUser>();
     }
 }
