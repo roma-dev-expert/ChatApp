@@ -16,7 +16,7 @@ namespace ChatApp.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUserChats()
         {
-            var user = await GetCurrentUser();
+            var user = await GetCurrentUserAsync();
 
             var chats = await _context.Chats
                 .Include(c => c.ChatUsers)
@@ -40,7 +40,7 @@ namespace ChatApp.Api.Controllers
                 return BadRequest("Chat name must be provided.");
             }
 
-            var user = await GetCurrentUser();
+            var user = await GetCurrentUserAsync();
 
             var chat = new Chat
             {
@@ -68,6 +68,35 @@ namespace ChatApp.Api.Controllers
             };
 
             return CreatedAtAction(nameof(GetUserChats), new { id = chat.Id }, result);
+        }
+
+        [HttpGet("{chatId}/messages")]
+        public async Task<IActionResult> GetChatMessages(int chatId)
+        {
+            var user = await GetCurrentUserAsync();
+
+            bool isParticipant = await _context.ChatUsers
+                .AnyAsync(cu => cu.ChatId == chatId && cu.UserId == user.Id);
+
+            if (!isParticipant)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "You are not a participant of this chat.");
+            }
+
+            var messages = await _context.Messages
+                .Where(m => m.ChatId == chatId)
+                .OrderBy(m => m.SentAt)
+                .Select(m => new MessageDto
+                {
+                    Id = m.Id,
+                    ChatId = m.ChatId,
+                    UserId = m.UserId,
+                    Text = m.Text,
+                    SentAt = m.SentAt
+                })
+                .ToListAsync();
+
+            return Ok(messages);
         }
 
         public class CreateChatRequest

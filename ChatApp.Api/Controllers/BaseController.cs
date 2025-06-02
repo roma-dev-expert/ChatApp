@@ -18,7 +18,7 @@ namespace ChatApp.Api.Controllers
             _context = context;
         }
 
-        protected async Task<User> GetCurrentUser()
+        protected async Task<User> GetCurrentUserAsync()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
                               ?? throw new UnauthorizedAccessException("User ID is missing in token.");
