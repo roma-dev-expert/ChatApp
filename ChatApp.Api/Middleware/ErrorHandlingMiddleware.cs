@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using ChatApp.Domain.Exceptions;
+using System.Net;
 using System.Text.Json;
 namespace ChatApp.Api.Middleware
 {
@@ -40,6 +41,9 @@ namespace ChatApp.Api.Middleware
                     break;
                 case KeyNotFoundException:
                     statusCode = HttpStatusCode.NotFound;
+                    break;
+                case ForbiddenException:
+                    statusCode = HttpStatusCode.Forbidden;
                     break;
                 default:
                     statusCode = HttpStatusCode.InternalServerError;

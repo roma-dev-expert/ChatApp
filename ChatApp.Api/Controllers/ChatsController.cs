@@ -1,5 +1,6 @@
 ﻿using ChatApp.Application.DTOs;
 using ChatApp.Domain.Entities;
+using ChatApp.Domain.Exceptions;
 using ChatApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -51,8 +52,7 @@ namespace ChatApp.Api.Controllers
             var chatUser = new ChatUser
             {
                 UserId = user.Id,
-                User = user,
-                Chat = chat
+                ChatId = chat.Id
             };
 
             chat.ChatUsers.Add(chatUser);
@@ -75,13 +75,7 @@ namespace ChatApp.Api.Controllers
         {
             var user = await GetCurrentUserAsync();
 
-            bool isParticipant = await _context.ChatUsers
-                .AnyAsync(cu => cu.ChatId == chatId && cu.UserId == user.Id);
-
-            if (!isParticipant)
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, "You are not a participant of this chat.");
-            }
+            await EnsureUserIsParticipantAsync(chatId, user.Id);
 
             var messages = await _context.Messages
                 .Where(m => m.ChatId == chatId)
@@ -98,6 +92,60 @@ namespace ChatApp.Api.Controllers
 
             return Ok(messages);
         }
+
+        [HttpPost("{chatId}/messages")]
+        public async Task<IActionResult> SendMessage(int chatId, [FromBody] CreateMessageRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Text))
+            {
+                return BadRequest("Message text must be provided.");
+            }
+
+            var user = await GetCurrentUserAsync();
+
+            await EnsureUserIsParticipantAsync(chatId, user.Id);
+
+            var chatExists = await _context.Chats.AnyAsync(c => c.Id == chatId);
+            if (!chatExists) return NotFound("Chat not found.");
+
+            var message = new Message
+            {
+                ChatId = chatId,
+                UserId = user.Id,
+                Text = request.Text,
+                SentAt = DateTime.UtcNow
+            };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            var result = new MessageDto
+            {
+                Id = message.Id,
+                ChatId = message.ChatId,
+                UserId = message.UserId,
+                Text = message.Text,
+                SentAt = message.SentAt
+            };
+
+            return CreatedAtAction(nameof(GetChatMessages), new { chatId = message.ChatId }, result);
+        }
+
+        protected async Task EnsureUserIsParticipantAsync(int chatId, int userId)
+        {
+            bool isParticipant = await _context.ChatUsers
+                .AnyAsync(cu => cu.ChatId == chatId && cu.UserId == userId);
+            if (!isParticipant)
+            {
+                throw new ForbiddenException("You are not a participant of this chat.");
+            }
+        }
+
+        public class CreateMessageRequest
+        {
+            public required string Text { get; set; }
+        }
+
 
         public class CreateChatRequest
         {

@@ -5,10 +5,10 @@
         public int Id { get; set; }
 
         public int ChatId { get; set; }
-        public required Chat Chat { get; set; }
+        public Chat? Chat { get; set; }
 
         public int UserId { get; set; }
-        public required User User { get; set; }
+        public User? User { get; set; }
 
         public required string Text { get; set; }
 
