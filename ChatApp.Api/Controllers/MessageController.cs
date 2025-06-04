@@ -19,10 +19,10 @@ namespace ChatApp.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetChatMessages(int chatId)
+        public async Task<IActionResult> GetChatMessages(int chatId, int pageNumber, int pageSize)
         {
             var user = await GetCurrentUserAsync();
-            var messages = await _messageService.GetChatMessagesAsync(chatId, user.Id);
+            var messages = await _messageService.GetChatMessagesAsync(chatId, user.Id, pageNumber, pageSize);
             return Ok(messages);
         }
 

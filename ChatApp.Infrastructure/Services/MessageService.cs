@@ -18,13 +18,15 @@ namespace ChatApp.Infrastructure.Services
             _chatParticipationService = chatParticipationService;
         }
 
-        public async Task<IEnumerable<MessageDto>> GetChatMessagesAsync(int chatId, int userId)
+        public async Task<IEnumerable<MessageDto>> GetChatMessagesAsync(int chatId, int userId, int pageNumber, int pageSize)
         {
             await _chatParticipationService.EnsureUserIsParticipantAsync(chatId, userId);
 
             var messages = await _context.Messages
                 .Where(m => m.ChatId == chatId)
                 .OrderBy(m => m.SentAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(m => new MessageDto
                 {
                     Id = m.Id,
@@ -38,12 +40,15 @@ namespace ChatApp.Infrastructure.Services
             return messages;
         }
 
-        public async Task<IEnumerable<MessageDto>> SearchMessagesAsync(int userId, string keyword)
+
+        public async Task<IEnumerable<MessageDto>> SearchMessagesAsync(int userId, string keyword, int pageNumber, int pageSize)
         {
             var messages = await _context.Messages
                 .Where(m => m.Text.Contains(keyword) &&
                             _context.ChatUsers.Any(cu => cu.ChatId == m.ChatId && cu.UserId == userId))
                 .OrderBy(m => m.SentAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(m => new MessageDto
                 {
                     Id = m.Id,
@@ -57,13 +62,15 @@ namespace ChatApp.Infrastructure.Services
             return messages;
         }
 
-        public async Task<IEnumerable<MessageDto>> SearchMessagesByChatAsync(int chatId, int userId, string keyword)
+        public async Task<IEnumerable<MessageDto>> SearchMessagesByChatAsync(int chatId, int userId, string keyword, int pageNumber, int pageSize)
         {
             await _chatParticipationService.EnsureUserIsParticipantAsync(chatId, userId);
 
             var messages = await _context.Messages
                 .Where(m => m.ChatId == chatId && m.Text.Contains(keyword))
                 .OrderBy(m => m.SentAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(m => new MessageDto
                 {
                     Id = m.Id,

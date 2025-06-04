@@ -18,18 +18,25 @@ namespace ChatApp.Api.Controllers
         }
 
         [HttpGet("messages")]
-        public async Task<IActionResult> SearchMessages([FromQuery] string keyword)
+        public async Task<IActionResult> SearchMessages(
+            [FromQuery] string keyword,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
             var user = await GetCurrentUserAsync();
-            var messages = await _messageService.SearchMessagesAsync(user.Id, keyword);
+            var messages = await _messageService.SearchMessagesAsync(user.Id, keyword, pageNumber, pageSize);
             return Ok(messages);
         }
 
         [HttpGet("chats/{chatId}/messages")]
-        public async Task<IActionResult> SearchMessagesByChat(int chatId, [FromQuery] string keyword)
+        public async Task<IActionResult> SearchMessagesByChat(
+            int chatId,
+            [FromQuery] string keyword,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
             var user = await GetCurrentUserAsync();
-            var messages = await _messageService.SearchMessagesByChatAsync(chatId, user.Id, keyword);
+            var messages = await _messageService.SearchMessagesByChatAsync(chatId, user.Id, keyword, pageNumber, pageSize);
             return Ok(messages);
         }
     }
