@@ -44,5 +44,21 @@ namespace ChatApp.Api.Hubs
                 await Clients.Caller.SendAsync("ReceiveError", "An error occurred while sending your message.");
             }
         }
+
+        public async Task DeleteMessageFromChat(int chatId, int messageId)
+        {
+            try
+            {
+                var user = await _userContext.GetCurrentUserAsync(Context.User!);
+                await _messageService.DeleteMessageAsync(chatId, messageId, user.Id);
+                await Clients.Group(chatId.ToString())
+                             .SendAsync("MessageDeleted", messageId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting message {MessageId} from chat {ChatId}", messageId, chatId);
+                await Clients.Caller.SendAsync("ReceiveError", "An error occurred while deleting the message.");
+            }
+        }
     }
 }
