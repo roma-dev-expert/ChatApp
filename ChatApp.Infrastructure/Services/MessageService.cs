@@ -38,6 +38,45 @@ namespace ChatApp.Infrastructure.Services
             return messages;
         }
 
+        public async Task<IEnumerable<MessageDto>> SearchMessagesAsync(int userId, string keyword)
+        {
+            var messages = await _context.Messages
+                .Where(m => m.Text.Contains(keyword) &&
+                            _context.ChatUsers.Any(cu => cu.ChatId == m.ChatId && cu.UserId == userId))
+                .OrderBy(m => m.SentAt)
+                .Select(m => new MessageDto
+                {
+                    Id = m.Id,
+                    ChatId = m.ChatId,
+                    UserId = m.UserId,
+                    Text = m.Text,
+                    SentAt = m.SentAt
+                })
+                .ToListAsync();
+
+            return messages;
+        }
+
+        public async Task<IEnumerable<MessageDto>> SearchMessagesByChatAsync(int chatId, int userId, string keyword)
+        {
+            await _chatParticipationService.EnsureUserIsParticipantAsync(chatId, userId);
+
+            var messages = await _context.Messages
+                .Where(m => m.ChatId == chatId && m.Text.Contains(keyword))
+                .OrderBy(m => m.SentAt)
+                .Select(m => new MessageDto
+                {
+                    Id = m.Id,
+                    ChatId = m.ChatId,
+                    UserId = m.UserId,
+                    Text = m.Text,
+                    SentAt = m.SentAt
+                })
+                .ToListAsync();
+
+            return messages;
+        }
+
         public async Task<MessageDto> SendMessageAsync(int chatId, int userId, string text)
         {
             if (string.IsNullOrWhiteSpace(text))
