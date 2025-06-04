@@ -1,4 +1,4 @@
-﻿namespace ChatApp.Application.DTOs
+﻿namespace ChatApp.Application.DTOs.Users
 {
     public class UserDto
     {
