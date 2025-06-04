@@ -44,6 +44,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IChatParticipationService, ChatParticipationService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 

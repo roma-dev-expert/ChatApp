@@ -1,5 +1,4 @@
 ﻿using ChatApp.Application.DTOs.Chats;
-using ChatApp.Application.DTOs.Messages;
 using ChatApp.Application.Interfaces;
 using ChatApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatApp.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/chats")]
     [Authorize]
     public class ChatsController : BaseController
     {
@@ -33,22 +32,6 @@ namespace ChatApp.Api.Controllers
             var user = await GetCurrentUserAsync();
             var chatDto = await _chatService.CreateChatAsync(user.Id, request.Name);
             return CreatedAtAction(nameof(GetUserChats), new { id = chatDto.Id }, chatDto);
-        }
-
-        [HttpGet("{chatId}/messages")]
-        public async Task<IActionResult> GetChatMessages(int chatId)
-        {
-            var user = await GetCurrentUserAsync();
-            var messages = await _chatService.GetChatMessagesAsync(chatId, user.Id);
-            return Ok(messages);
-        }
-
-        [HttpPost("{chatId}/messages")]
-        public async Task<IActionResult> SendMessage(int chatId, [FromBody] CreateMessageRequest request)
-        {
-            var user = await GetCurrentUserAsync();
-            var messageDto = await _chatService.SendMessageAsync(chatId, user.Id, request.Text);
-            return CreatedAtAction(nameof(GetChatMessages), new { chatId = messageDto.ChatId }, messageDto);
         }
     }
 }

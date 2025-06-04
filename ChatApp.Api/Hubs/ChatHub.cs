@@ -8,12 +8,14 @@ namespace ChatApp.Api.Hubs
     public class ChatHub : Hub
     {
         private readonly IChatService _chatService;
+        private readonly IMessageService _messageService;
         private readonly IUserContext _userContext;
         private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(IChatService chatService, IUserContext userContext, ILogger<ChatHub> logger)
+        public ChatHub(IChatService chatService, IMessageService messageService, IUserContext userContext, ILogger<ChatHub> logger)
         {
             _chatService = chatService;
+            _messageService = messageService;
             _userContext = userContext;
             _logger = logger;
         }
@@ -33,7 +35,7 @@ namespace ChatApp.Api.Hubs
             try
             {
                 var user = await _userContext.GetCurrentUserAsync(Context.User!);
-                var messageDto = await _chatService.SendMessageAsync(chatId, user.Id, messageText);
+                var messageDto = await _messageService.SendMessageAsync(chatId, user.Id, messageText);
                 await Clients.Group(chatId.ToString()).SendAsync("ReceiveMessage", messageDto);
             }
             catch (Exception ex)
