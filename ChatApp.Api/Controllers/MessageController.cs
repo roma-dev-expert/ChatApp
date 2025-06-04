@@ -41,5 +41,13 @@ namespace ChatApp.Api.Controllers
             await _messageService.DeleteMessageAsync(chatId, messageId, user.Id);
             return Ok($"Message with id {messageId} was successfully deleted.");
         }
+
+        [HttpPut("{messageId}")]
+        public async Task<IActionResult> EditMessage(int chatId, int messageId, [FromBody] EditMessageRequest request)
+        {
+            var user = await GetCurrentUserAsync();
+            var updatedMessage = await _messageService.EditMessageAsync(chatId, messageId, user.Id, request.Text);
+            return Ok(updatedMessage);
+        }
     }
 }

@@ -87,5 +87,32 @@ namespace ChatApp.Infrastructure.Services
             _context.Messages.Remove(message);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<MessageDto> EditMessageAsync(int chatId, int messageId, int userId, string newText)
+        {
+            if (string.IsNullOrWhiteSpace(newText))
+                throw new ArgumentException("New message text must be provided.", nameof(newText));
+
+            await _chatParticipationService.EnsureUserIsParticipantAsync(chatId, userId);
+
+            var message = await _context.Messages.FirstOrDefaultAsync(m => m.Id == messageId && m.ChatId == chatId);
+            if (message == null)
+                throw new KeyNotFoundException("Message not found.");
+
+            if (message.UserId != userId)
+                throw new ForbiddenException("You are not authorized to edit this message.");
+            message.Text = newText;
+
+            await _context.SaveChangesAsync();
+
+            return new MessageDto
+            {
+                Id = message.Id,
+                ChatId = message.ChatId,
+                UserId = message.UserId,
+                Text = message.Text,
+                SentAt = message.SentAt
+            };
+        }
     }
 }
