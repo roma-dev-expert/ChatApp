@@ -1,4 +1,5 @@
 ﻿using ChatApp.Application.DTOs.Messages;
+using ChatApp.Application.Extensions;
 using ChatApp.Application.Interfaces;
 using ChatApp.Domain.Entities;
 using ChatApp.Domain.Exceptions;
@@ -27,17 +28,9 @@ namespace ChatApp.Infrastructure.Services
                 .OrderBy(m => m.SentAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(m => new MessageDto
-                {
-                    Id = m.Id,
-                    ChatId = m.ChatId,
-                    UserId = m.UserId,
-                    Text = m.Text,
-                    SentAt = m.SentAt
-                })
                 .ToListAsync();
 
-            return messages;
+            return messages.Select(m => m.ToDto()).ToList();
         }
         public async Task<MessageDto?> GetMessageByIdAsync(int chatId, int messageId, int userId)
         {
@@ -45,17 +38,9 @@ namespace ChatApp.Infrastructure.Services
 
             var message = await _context.Messages
                 .Where(m => m.ChatId == chatId && m.Id == messageId)
-                .Select(m => new MessageDto
-                {
-                    Id = m.Id,
-                    ChatId = m.ChatId,
-                    UserId = m.UserId,
-                    Text = m.Text,
-                    SentAt = m.SentAt
-                })
                 .FirstOrDefaultAsync();
 
-            return message;
+            return message?.ToDto();
         }
 
         public async Task<IEnumerable<MessageDto>> SearchMessagesAsync(int userId, string keyword, int pageNumber, int pageSize)
@@ -66,17 +51,9 @@ namespace ChatApp.Infrastructure.Services
                 .OrderBy(m => m.SentAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(m => new MessageDto
-                {
-                    Id = m.Id,
-                    ChatId = m.ChatId,
-                    UserId = m.UserId,
-                    Text = m.Text,
-                    SentAt = m.SentAt
-                })
                 .ToListAsync();
 
-            return messages;
+            return messages.Select(m => m.ToDto()).ToList();
         }
 
         public async Task<IEnumerable<MessageDto>> SearchMessagesByChatAsync(int chatId, int userId, string keyword, int pageNumber, int pageSize)
@@ -88,17 +65,9 @@ namespace ChatApp.Infrastructure.Services
                 .OrderBy(m => m.SentAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(m => new MessageDto
-                {
-                    Id = m.Id,
-                    ChatId = m.ChatId,
-                    UserId = m.UserId,
-                    Text = m.Text,
-                    SentAt = m.SentAt
-                })
                 .ToListAsync();
 
-            return messages;
+            return messages.Select(m => m.ToDto()).ToList();
         }
 
         public async Task<MessageDto> SendMessageAsync(int chatId, int userId, string text)
@@ -123,16 +92,7 @@ namespace ChatApp.Infrastructure.Services
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            var result = new MessageDto
-            {
-                Id = message.Id,
-                ChatId = message.ChatId,
-                UserId = message.UserId,
-                Text = message.Text,
-                SentAt = message.SentAt
-            };
-
-            return result;
+            return message.ToDto();
         }
 
         public async Task DeleteMessageAsync(int chatId, int messageId, int userId)
@@ -168,14 +128,7 @@ namespace ChatApp.Infrastructure.Services
 
             await _context.SaveChangesAsync();
 
-            return new MessageDto
-            {
-                Id = message.Id,
-                ChatId = message.ChatId,
-                UserId = message.UserId,
-                Text = message.Text,
-                SentAt = message.SentAt
-            };
+            return message.ToDto();
         }
     }
 }

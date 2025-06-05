@@ -4,6 +4,7 @@ using ChatApp.Domain.Entities;
 using ChatApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,12 +16,18 @@ namespace ChatApp.Infrastructure.Services
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly JwtService _jwtService;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(ApplicationDbContext context, IConfiguration configuration, JwtService jwtService)
+        public AuthService(
+            ApplicationDbContext context,
+            IConfiguration configuration,
+            JwtService jwtService,
+            ILogger<AuthService> logger)
         {
             _context = context;
             _configuration = configuration;
             _jwtService = jwtService;
+            _logger = logger;
         }
 
         public async Task RegisterAsync(RegisterRequest request)
@@ -36,6 +43,9 @@ namespace ChatApp.Infrastructure.Services
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User registered successfully. Username: {Username}, Id: {UserId}",
+                user.Username, user.Id);
         }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -48,6 +58,7 @@ namespace ChatApp.Infrastructure.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var signingKey = _jwtService.GetSigningKey();
 
+            var expirationHours = Convert.ToDouble(_configuration["Jwt:ExpirationHours"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
@@ -55,7 +66,7 @@ namespace ChatApp.Infrastructure.Services
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.Username)
                 }),
-                Expires = DateTime.UtcNow.AddHours(2),
+                Expires = DateTime.UtcNow.AddHours(expirationHours),
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
                 SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256Signature)
@@ -63,6 +74,9 @@ namespace ChatApp.Infrastructure.Services
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
+
+            _logger.LogInformation("User logged in successfully. Username: {Username}, Id: {UserId}",
+                user.Username, user.Id);
 
             return new LoginResponse(tokenString);
         }

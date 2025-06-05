@@ -18,8 +18,8 @@ namespace ChatApp.Api.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetChatMessages(int chatId,
-            [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
             var user = await GetCurrentUserAsync();
             var messages = await _messageService.GetChatMessagesAsync(chatId, user.Id, pageNumber, pageSize);

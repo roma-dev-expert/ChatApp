@@ -1,4 +1,5 @@
 ﻿using ChatApp.Application.DTOs.Chats;
+using ChatApp.Application.Extensions;
 using ChatApp.Application.Interfaces;
 using ChatApp.Domain.Entities;
 using ChatApp.Infrastructure.Persistence;
@@ -15,39 +16,27 @@ namespace ChatApp.Infrastructure.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<ChatUserDto>> GetUserChatsAsync(int userId)
+        public async Task<IEnumerable<ChatDto>> GetUserChatsAsync(int userId)
         {
             var chats = await _context.Chats
                 .Include(c => c.ChatUsers)
                 .Where(c => c.ChatUsers.Any(cu => cu.UserId == userId))
-                .Select(c => new ChatUserDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    ParticipantIds = c.ChatUsers.Select(cu => cu.UserId).ToList()
-                })
                 .ToListAsync();
 
-            return chats;
+            return chats.Select(c => c.ToDto()).ToList();
         }
 
-        public async Task<ChatUserDto?> GetChatByIdAsync(int userId, int chatId)
+        public async Task<ChatDto?> GetChatByIdAsync(int userId, int chatId)
         {
             var chat = await _context.Chats
                 .Include(c => c.ChatUsers)
                 .Where(c => c.Id == chatId && c.ChatUsers.Any(cu => cu.UserId == userId))
-                .Select(c => new ChatUserDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    ParticipantIds = c.ChatUsers.Select(cu => cu.UserId).ToList()
-                })
                 .FirstOrDefaultAsync();
 
-            return chat;
+            return chat?.ToDto();
         }
 
-        public async Task<ChatUserDto> CreateChatAsync(int userId, string chatName)
+        public async Task<ChatDto> CreateChatAsync(int userId, string chatName)
         {
             if (string.IsNullOrWhiteSpace(chatName))
                 throw new ArgumentException("Chat name must be provided.", nameof(chatName));
@@ -68,14 +57,7 @@ namespace ChatApp.Infrastructure.Services
             _context.Chats.Add(chat);
             await _context.SaveChangesAsync();
 
-            var result = new ChatUserDto
-            {
-                Id = chat.Id,
-                Name = chat.Name,
-                ParticipantIds = chat.ChatUsers.Select(cu => cu.UserId).ToList()
-            };
-
-            return result;
+            return chat.ToDto();
         }
     }
 }
