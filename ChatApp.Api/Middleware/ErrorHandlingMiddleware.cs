@@ -1,17 +1,20 @@
 ﻿using ChatApp.Domain.Exceptions;
 using System.Net;
 using System.Text.Json;
+
 namespace ChatApp.Api.Middleware
 {
     public class ErrorHandlingMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger, IWebHostEnvironment env)
         {
             _next = next;
             _logger = logger;
+            _env = env;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -23,11 +26,16 @@ namespace ChatApp.Api.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception occurred.");
+                if (context.Response.HasStarted)
+                {
+                    _logger.LogWarning("The response has already started. Cannot write error response.");
+                    throw;
+                }
                 await HandleExceptionAsync(context, ex);
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             HttpStatusCode statusCode = HttpStatusCode.InternalServerError;
 
@@ -50,16 +58,23 @@ namespace ChatApp.Api.Middleware
                     break;
             }
 
+            string errorMessage = _env.IsDevelopment() ? exception.Message : "An unexpected error has occurred.";
+
             var errorDetails = new ErrorDetails
             {
                 StatusCode = (int)statusCode,
-                Message = exception.Message
+                Message = errorMessage
             };
 
-            var errorJson = JsonSerializer.Serialize(errorDetails);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var errorJson = JsonSerializer.Serialize(errorDetails, options);
+
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
-            return context.Response.WriteAsync(errorJson);
+            await context.Response.WriteAsync(errorJson);
         }
     }
 

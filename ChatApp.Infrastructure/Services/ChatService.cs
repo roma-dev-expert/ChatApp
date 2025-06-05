@@ -31,6 +31,22 @@ namespace ChatApp.Infrastructure.Services
             return chats;
         }
 
+        public async Task<ChatUserDto?> GetChatByIdAsync(int userId, int chatId)
+        {
+            var chat = await _context.Chats
+                .Include(c => c.ChatUsers)
+                .Where(c => c.Id == chatId && c.ChatUsers.Any(cu => cu.UserId == userId))
+                .Select(c => new ChatUserDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    ParticipantIds = c.ChatUsers.Select(cu => cu.UserId).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return chat;
+        }
+
         public async Task<ChatUserDto> CreateChatAsync(int userId, string chatName)
         {
             if (string.IsNullOrWhiteSpace(chatName))

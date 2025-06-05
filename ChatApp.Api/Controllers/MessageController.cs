@@ -1,13 +1,11 @@
 ﻿using ChatApp.Application.DTOs.Messages;
 using ChatApp.Application.Interfaces;
 using ChatApp.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChatApp.Api.Controllers
 {
     [Route("api/chats/{chatId}/messages")]
-    [Authorize]
     public class MessagesController : BaseController
     {
         private readonly IMessageService _messageService;
@@ -19,11 +17,23 @@ namespace ChatApp.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetChatMessages(int chatId, int pageNumber, int pageSize)
+        public async Task<IActionResult> GetChatMessages(int chatId,
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
         {
             var user = await GetCurrentUserAsync();
             var messages = await _messageService.GetChatMessagesAsync(chatId, user.Id, pageNumber, pageSize);
             return Ok(messages);
+        }
+
+        [HttpGet("{messageId}")]
+        public async Task<IActionResult> GetMessageById(int chatId, int messageId)
+        {
+            var user = await GetCurrentUserAsync();
+            var message = await _messageService.GetMessageByIdAsync(chatId, messageId, user.Id);
+            if (message == null)
+                return NotFound();
+            return Ok(message);
         }
 
         [HttpPost]
@@ -31,7 +41,7 @@ namespace ChatApp.Api.Controllers
         {
             var user = await GetCurrentUserAsync();
             var messageDto = await _messageService.SendMessageAsync(chatId, user.Id, request.Text);
-            return CreatedAtAction(nameof(GetChatMessages), new { chatId = messageDto.ChatId }, messageDto);
+            return CreatedAtAction(nameof(GetMessageById), new { chatId = messageDto.ChatId, messageId = messageDto.Id }, messageDto);
         }
 
         [HttpDelete("{messageId}")]

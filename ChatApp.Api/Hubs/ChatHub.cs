@@ -7,58 +7,37 @@ namespace ChatApp.Api.Hubs
     [Authorize]
     public class ChatHub : Hub
     {
-        private readonly IChatService _chatService;
         private readonly IMessageService _messageService;
         private readonly IUserContext _userContext;
-        private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(IChatService chatService, IMessageService messageService, IUserContext userContext, ILogger<ChatHub> logger)
+        public ChatHub(IMessageService messageService, IUserContext userContext)
         {
-            _chatService = chatService;
             _messageService = messageService;
             _userContext = userContext;
-            _logger = logger;
         }
 
         public async Task JoinChatGroup(int chatId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, chatId.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"chat_{chatId}");
         }
 
         public async Task LeaveChatGroup(int chatId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, chatId.ToString());
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"chat_{chatId}");
         }
 
         public async Task SendMessageToChat(int chatId, string messageText)
         {
-            try
-            {
-                var user = await _userContext.GetCurrentUserAsync(Context.User!);
-                var messageDto = await _messageService.SendMessageAsync(chatId, user.Id, messageText);
-                await Clients.Group(chatId.ToString()).SendAsync("ReceiveMessage", messageDto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while sending message to chat {ChatId}", chatId);
-                await Clients.Caller.SendAsync("ReceiveError", "An error occurred while sending your message.");
-            }
+            var user = await _userContext.GetCurrentUserAsync(Context.User!);
+            var messageDto = await _messageService.SendMessageAsync(chatId, user.Id, messageText);
+            await Clients.Group($"chat_{chatId}").SendAsync("ReceiveMessage", messageDto);
         }
 
         public async Task DeleteMessageFromChat(int chatId, int messageId)
         {
-            try
-            {
-                var user = await _userContext.GetCurrentUserAsync(Context.User!);
-                await _messageService.DeleteMessageAsync(chatId, messageId, user.Id);
-                await Clients.Group(chatId.ToString())
-                             .SendAsync("MessageDeleted", messageId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while deleting message {MessageId} from chat {ChatId}", messageId, chatId);
-                await Clients.Caller.SendAsync("ReceiveError", "An error occurred while deleting the message.");
-            }
+            var user = await _userContext.GetCurrentUserAsync(Context.User!);
+            await _messageService.DeleteMessageAsync(chatId, messageId, user.Id);
+            await Clients.Group($"chat_{chatId}").SendAsync("MessageDeleted", messageId);
         }
     }
 }

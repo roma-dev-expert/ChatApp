@@ -1,12 +1,10 @@
 ﻿using ChatApp.Application.Interfaces;
 using ChatApp.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChatApp.Api.Controllers
 {
     [Route("api/search")]
-    [Authorize]
     public class SearchController : BaseController
     {
         private readonly IMessageService _messageService;

@@ -39,7 +39,24 @@ namespace ChatApp.Infrastructure.Services
 
             return messages;
         }
+        public async Task<MessageDto?> GetMessageByIdAsync(int chatId, int messageId, int userId)
+        {
+            await _chatParticipationService.EnsureUserIsParticipantAsync(chatId, userId);
 
+            var message = await _context.Messages
+                .Where(m => m.ChatId == chatId && m.Id == messageId)
+                .Select(m => new MessageDto
+                {
+                    Id = m.Id,
+                    ChatId = m.ChatId,
+                    UserId = m.UserId,
+                    Text = m.Text,
+                    SentAt = m.SentAt
+                })
+                .FirstOrDefaultAsync();
+
+            return message;
+        }
 
         public async Task<IEnumerable<MessageDto>> SearchMessagesAsync(int userId, string keyword, int pageNumber, int pageSize)
         {

@@ -1,5 +1,4 @@
-﻿using BCrypt.Net;
-using ChatApp.Application.DTOs.Users;
+﻿using ChatApp.Application.DTOs.Users;
 using ChatApp.Application.Interfaces;
 using ChatApp.Domain.Entities;
 using ChatApp.Infrastructure.Persistence;
